@@ -3,9 +3,9 @@
 
 from tokenize import Double
 import adsk.core, adsk.fusion, adsk.cam, traceback, os, sys, random, time
-sys.path.append("./packages")
-import sympy
-from sympy import *
+#sys.path.append("./packages")
+#import sympy
+#from sympy import *
 
 from .helpers import mathHelper
 from .helpers import meshHelper
@@ -180,17 +180,17 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
 
 # TODO: Dass die funktionen den body returnen ist natürlich aktuell nutzlos. Der originale body wird verändert 
 
-def scaleMesh(body:Body, scalar:int) -> Body:
-    body.vertices = (scalar*Matrix(body.vertices)).tolist()
-    return body
+#def scaleMesh(body:Body, scalar:int) -> Body:
+#    body.vertices = (scalar*Matrix(body.vertices)).tolist()
+#    return body
 
-def scaleMeshByAxis(body:Body, x=1., y=1., z=1.) -> Body:
-    mat = Matrix(body.vertices)
-    mat[:,0] = (x*(Matrix(body.vertices)[:,0]))
-    mat[:,1] = (y*(Matrix(body.vertices)[:,1]))
-    mat[:,2] = (z*(Matrix(body.vertices)[:,2]))
-    body.vertices = mat.tolist()
-    return body
+#def scaleMeshByAxis(body:Body, x=1., y=1., z=1.) -> Body:
+#    mat = Matrix(body.vertices)
+#    mat[:,0] = (x*(Matrix(body.vertices)[:,0]))
+#    mat[:,1] = (y*(Matrix(body.vertices)[:,1]))
+#    mat[:,2] = (z*(Matrix(body.vertices)[:,2]))
+#    body.vertices = mat.tolist()
+#    return body
 
 #randomly distorts each x,y,z coordinate of each vertex
 def randomDistortion(body:Body, degree:float, seed:int=None) -> Body:
