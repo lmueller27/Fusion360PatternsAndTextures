@@ -1,5 +1,5 @@
 import adsk
-from sympy.solvers.diophantine.diophantine import norm
+#from sympy.solvers.diophantine.diophantine import norm
 
 
 class Body:
