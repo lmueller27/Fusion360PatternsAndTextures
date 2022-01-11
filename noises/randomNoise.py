@@ -1,6 +1,6 @@
 import random
 from ..helpers.meshHelper import Body
-from adsk.core import Vector2D, Vector3D
+from adsk.core import ProgressDialog, Vector2D, Vector3D
 
 # TODO: Dass die funktionen den body returnen ist natürlich aktuell nutzlos. Der originale body wird verändert 
 
@@ -48,7 +48,7 @@ def randomGeneralDistortion(body:Body, degree:float, seed:int=None) -> Body:
 # Distorts each vertex by the given degree. The degree is scaled according to the face size
 # If inverse=False then bigger faces are distorted more extremely
 # if inverse=True then smaller faces are distorted more extremely
-def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None):
+def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None, progressDialog:ProgressDialog=None):
     if seed:
         random.seed(seed)
     res = []
@@ -65,7 +65,16 @@ def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None):
         minArea = min(areas)
         maxArea = max(areas)
     areas = list(map(lambda x: (x- minArea)/(maxArea-minArea)*(1-0)+0, areas))
+    i=0
     for f,a in zip(body.facets,areas):
+        # Update progress value of progress dialog
+        if progressDialog:
+            if progressDialog.wasCancelled:
+                break
+            if i%int(len(body.facets)/20)==0:
+                progressDialog.progressValue = i+1
+        i+=1
+        
         body.vertices[f[0]-1] = [random.uniform(-degree,degree)*a + float(el) for el in body.vertices[f[0]-1]]
         body.vertices[f[1]-1] = [random.uniform(-degree,degree)*a + float(el) for el in body.vertices[f[1]-1]]
         body.vertices[f[2]-1] = [random.uniform(-degree,degree)*a + float(el) for el in body.vertices[f[2]-1]]
@@ -85,7 +94,6 @@ def weirdScalyDistortion(body, degree:float, seed:int=None):
     minArea = min(areas)
     maxArea = max(areas)
     areas = list(map(lambda x: (x- minArea)/(maxArea-minArea), areas))
-    print(min(areas), max(areas))
     for f,a in zip(body.facets,areas):
         i = random.uniform(-degree,degree)
         
@@ -93,15 +101,3 @@ def weirdScalyDistortion(body, degree:float, seed:int=None):
         body.vertices[f[1]-1] = [i*a + float(el) for el in body.vertices[f[1]-1]]
         body.vertices[f[2]-1] = [i*a + float(el) for el in body.vertices[f[2]-1]]
     return res
-
-def valueNoise(body:Body, seed:int) -> Body:
-    if seed:
-        random.seed(seed)
-    xValues = [v[0] for v in body.vertices]
-    yValues = [v[1] for v in body.vertices]
-    zValues = [v[2] for v in body.vertices]
-    print(max(xValues), max(yValues), max(zValues))
-    print(min(xValues), min(yValues), min(zValues))
-    # define the 3d grid to distribute the random points onto
-    p1 = min(xValues), min(yValues), min(zValues)
-    return body

@@ -1,9 +1,9 @@
 import random
 from ..helpers.meshHelper import Body
 from ..helpers.mathHelper import *
-from adsk.core import Vector2D, Vector3D
+from adsk.core import ProgressDialog, Vector2D, Vector3D
 
-def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None) -> Body:
+def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
     if seed:
         random.seed(seed)
     xValues = [v[0] for v in body.vertices]
@@ -27,8 +27,6 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
                 gradient = Vector3D.create(x,y,z)
                 gradient.normalize()
                 lattice[i][j].append(gradient)
-    
-    print(len(lattice))
     
     def getNoiseValue(x,y,z):
         xMin = min(int(x),len(lattice)-1)
@@ -89,9 +87,19 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
 
     xValuesScaled = [(x- minX)/(maxX-minX) * (resolution-1) for x in xValues]
     yValuesScaled = [(y- minY)/(maxY-minY) * (resolution-1) for y in yValues]
-    zValuesScaled = [(z- minZ)/(maxZ-minZ) * (resolution-1) for z in zValues]
+    if not maxZ == minZ:
+        zValuesScaled = [(z- minZ)/(maxZ-minZ) * (resolution-1) for z in zValues]
+    else:
+        zValuesScaled = zValues
     xyzValuesScaled = list(zip(xValuesScaled,yValuesScaled,zValuesScaled))
     for i in range(len(xyzValuesScaled)):
+        # Update progress value of progress dialog
+        if progressDialog:
+            if progressDialog.wasCancelled:
+                break
+            if i%int(len(body.vertices)/20)==0:
+                progressDialog.progressValue = i+1
+
         b = body.vertices[i]
         n = body.normals[i]
 
@@ -107,7 +115,7 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
 
 #frequency>1 -> compress the curve, frequency<1 -> stretch the curve
 # We don't allow frequencies > 1, as our curve is not periodic. 
-def perlinNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None) -> Body:
+def perlinNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
     if seed:
         random.seed(seed)
     xValues = [v[0] for v in body.vertices]
@@ -167,6 +175,13 @@ def perlinNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=
     xyValuesScaled = list(zip(xValuesScaled,yValuesScaled))
 
     for i in range(len(xyValuesScaled)):
+        # Update progress value of progress dialog
+        if progressDialog:
+            if progressDialog.wasCancelled:
+                break
+            if i%int(len(body.vertices)/20)==0:
+                progressDialog.progressValue = i+1
+
         b = body.vertices[i]
         n = body.normals[i]
         vec = Vector3D.create(b[0],b[1],b[2])
