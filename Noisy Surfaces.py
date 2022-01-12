@@ -257,7 +257,8 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
             elif changedInput.id == 'fileDialogButton':
                 fileDialog = ui.createFileDialog()
                 fileDialog.isMultiSelectEnabled = False
-                fileDialog.initialDirectory = './resources/exampleGrungeMaps'
+                print(os.path.dirname(os.path.abspath(__file__))+'/resources/exampleGrungeMaps')
+                fileDialog.initialDirectory =  os.path.dirname(os.path.abspath(__file__))+'/resources/exampleGrungeMaps'
                 fileDialog.title = 'Choose Grunge Map Image'
                 fileDialog.filter = '*.png'
                 result = fileDialog.showOpen()
@@ -274,6 +275,9 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                     mesh = selection.mesh
                     body = meshHelper.fusionPolygonMeshToBody(mesh)
                     degreeField.value = calculateAppropriateNoiseLevel(body)
+                else:
+                    currentPreview = None
+                    currentPreviewMesh = None
 
 
             app.activeViewport.refresh()  
@@ -306,7 +310,9 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
                 for selection in selectionList:
                     selection.isLightBulbOn = False
                     mesh = selection.mesh
-                showMeshPreview(currentPreview,mesh)
+                #showMeshPreview(currentPreview,mesh)
+                if not currentPreview == None:
+                    showMeshPreview(currentPreview,currentPreviewMesh)
             elif previewIsActive and (not lastChangedInput == 'advancedGroup'):
                 if not stepActive == lastStepGroupValue:
                     lastStepGroupValue = stepActive
