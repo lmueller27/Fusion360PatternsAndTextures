@@ -73,15 +73,18 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     else:
         zValuesScaled = zValues
     xyzValuesScaled = list(zip(xValuesScaled,yValuesScaled,zValuesScaled))
+
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xyzValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
-            elif i == len(body.vertices)-1:
-                progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
         
         b = body.vertices[i]
         n = body.normals[i]
@@ -147,13 +150,17 @@ def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     yValuesScaled = [(y- minY)/(maxY-minY) * (resolution-1) for y in yValues]
     xyValuesScaled = list(zip(xValuesScaled,yValuesScaled))
 
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xyValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         b = body.vertices[i]
         n = body.normals[i]
@@ -200,13 +207,17 @@ def valueNoise1D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     maxX = max(xValues)
     xValuesScaled = [(x- minX)/(maxX-minX) * (resolution-1) for x in xValues]
 
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         #n = (xValuesScaled[i]/len(body.vertices)) * resolution
         body.vertices[i][2] += getNoiseValue(xValuesScaled[i]*frequency)*amplitude

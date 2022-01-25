@@ -35,15 +35,18 @@ def worleyNoise3D(body:Body, resolution:int, amplitude:float, step:bool, stepPad
         return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
     
     #print(time.time()-start)
-
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(body.vertices)):
 
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         v = body.vertices[i]
         n = body.normals[i]
@@ -94,6 +97,8 @@ def worleyNoise2D(body:Body, resolution:int, amplitude:float, step:bool, stepPad
     def distance2D(a,b):
         return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
 
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(body.vertices)):
         b = body.vertices[i]
         n = body.normals[i]
@@ -104,9 +109,11 @@ def worleyNoise2D(body:Body, resolution:int, amplitude:float, step:bool, stepPad
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
         
         ###
         if step:

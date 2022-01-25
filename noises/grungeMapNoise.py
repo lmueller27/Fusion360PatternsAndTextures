@@ -5,7 +5,7 @@ from ..helpers.pngHelper import GrungeMap
 from adsk.core import ProgressDialog, Vector2D, Vector3D
 import adsk.core
 
-def grungeMapNoise(body:Body, map:GrungeMap, amplitude, inverse, smooth, progressDialog, plane):
+def grungeMapNoise(body:Body, map:GrungeMap, amplitude, inverse, smooth, plane,progressDialog=None):
     if plane == 'xY' or plane == None:
         xValues = [v[0] for v in body.vertices]
         yValues = [v[1] for v in body.vertices]
@@ -51,13 +51,17 @@ def grungeMapNoise(body:Body, map:GrungeMap, amplitude, inverse, smooth, progres
     yValuesScaled = [(y- minY)/(maxY-minY) * (map.y) for y in yValues]
     xyValuesScaled = list(zip(xValuesScaled,yValuesScaled))
 
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xyValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         b = body.vertices[i]
         n = body.normals[i]

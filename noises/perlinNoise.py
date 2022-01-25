@@ -92,13 +92,18 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
     else:
         zValuesScaled = zValues
     xyzValuesScaled = list(zip(xValuesScaled,yValuesScaled,zValuesScaled))
+
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xyzValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         b = body.vertices[i]
         n = body.normals[i]
@@ -174,13 +179,17 @@ def perlinNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=
     yValuesScaled = [(y- minY)/(maxY-minY) * (resolution-1) for y in yValues]
     xyValuesScaled = list(zip(xValuesScaled,yValuesScaled))
 
+    allSteps = len(body.vertices)
+    maxSteps = allSteps - allSteps/20
     for i in range(len(xyValuesScaled)):
         # Update progress value of progress dialog
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.vertices)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
 
         b = body.vertices[i]
         n = body.normals[i]

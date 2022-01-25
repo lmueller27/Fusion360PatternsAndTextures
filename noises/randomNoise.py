@@ -48,7 +48,7 @@ def randomGeneralDistortion(body:Body, degree:float, seed:int=None) -> Body:
 # Distorts each vertex by the given degree. The degree is scaled according to the face size
 # If inverse=False then bigger faces are distorted more extremely
 # if inverse=True then smaller faces are distorted more extremely
-def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None, progressDialog:ProgressDialog=None):
+def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None, progressDialog=None):
     if seed:
         random.seed(seed)
     res = []
@@ -64,16 +64,22 @@ def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None, p
     else:
         minArea = min(areas)
         maxArea = max(areas)
+    
+    if maxArea == minArea:
+        raise ValueError('All faces of the mesh are of the same size. Adaptive Noise can not be applied. ')
     areas = list(map(lambda x: (x- minArea)/(maxArea-minArea)*(1-0)+0, areas))
+    allSteps = len(body.facets)
+    maxSteps = allSteps - allSteps/20
     i=0
     for f,a in zip(body.facets,areas):
-        # Update progress value of progress dialog
+        i+=1
         if progressDialog:
             if progressDialog.wasCancelled:
-                break
-            if i%int(len(body.facets)/20)==0:
+                raise ValueError('CanceledProgress')
+            if i%int(allSteps/20)==0:
                 progressDialog.progressValue = i+1
-        i+=1
+            elif i > maxSteps:
+                progressDialog.progressValue = progressDialog.maximumValue
         
         body.vertices[f[0]-1] = [random.uniform(-degree,degree)*a + float(el) for el in body.vertices[f[0]-1]]
         body.vertices[f[1]-1] = [random.uniform(-degree,degree)*a + float(el) for el in body.vertices[f[1]-1]]

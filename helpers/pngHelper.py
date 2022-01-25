@@ -9,7 +9,6 @@ class GrungeMap:
 def readPng(filename):
     file = png.Reader(filename=filename)
     info = file.read_flat()
-    print(info[3])
     sizeX = info[1]
     sizeY = info[0]
     isGrey = info[3]['greyscale']
@@ -19,8 +18,7 @@ def readPng(filename):
     else:
         palette = None
     pixelValues = list(info[2])
-    #print(len(pixelValues))
-    #print(sizeX, sizeY)
+
     minValue = min(pixelValues)
     maxValue = max(pixelValues)
 
@@ -36,7 +34,6 @@ def readPng(filename):
             def applyPalette(x):
                 return round(0.299*palette[x][0]+0.587*palette[x][1]+0.114*palette[x][2],1)
             appliedPalette = [applyPalette(x) for x in pixelValues]
-            print(len(appliedPalette))
             minValue = min(appliedPalette)
             maxValue = max(appliedPalette)
             flatValuesScaled = [(x-minValue)/(maxValue-minValue) for x in appliedPalette]
