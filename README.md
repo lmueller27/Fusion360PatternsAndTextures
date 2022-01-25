@@ -10,4 +10,6 @@ When creating and modelling 3D objects, it is important to have a variety of eas
 
 ![TrailerImage](/resources/readme/valueNoisePlane.png)
 ![TrailerImage](/resources/readme/working.png)
+![TrailerImage](/resources/readme/preview.png)
+![TrailerImage](/resources/readme/newheads.png)
 
