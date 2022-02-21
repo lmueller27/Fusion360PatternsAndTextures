@@ -104,6 +104,8 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue
+            elif i == 0:
+                progressDialog.progressValue = i+1
 
         b = body.vertices[i]
         n = body.normals[i]
