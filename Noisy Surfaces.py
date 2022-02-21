@@ -503,6 +503,8 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
             elif planeInput.selectedItem.name == "yZ":
                 planeString = 'yZ'
 
+            #test line 
+            
             selectionList = []
             for i in range(inputs.itemById('body_input').selectionCount):
                 selectionList.append(inputs.itemById('body_input').selection(i).entity)
