@@ -1,4 +1,4 @@
-#Noisy Surfaces: A Fusion360 Add-In
+# Noisy Surfaces: A Fusion360 Add-In
 
 Noisy Surfaces is a Fusion360 Add-In that allows users to add randomly generated noise to their bodies and surfaces for a more natural, rough look and feel. An installation guide and description of the plugin and its functionalities can be downloaded here: [manual.pdf](/resources/readme/manual.pdf)
 
