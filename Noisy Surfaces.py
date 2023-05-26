@@ -114,7 +114,10 @@ class SampleCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
         #test = inputs.addIntegerSliderListCommandInput('test', 'test', list(range(2,20))+list(range(20,100,5)))
 
 
-        degree = inputs.addValueInput('degree', 'Noise Level', '', adsk.core.ValueInput.createByReal(0.25)) 
+        #degree = inputs.addValueInput('degree', 'Noise Level', '', adsk.core.ValueInput.createByReal(0.25)) 
+        degree = inputs.addFloatSliderCommandInput('degree', 'Level', "", 0, 3)
+        degree.spinStep = 0.25
+        degree.valueOne = 1
         degree.tooltip = "Sets the level of noise"
         #numberField.isEnabled = False
         #Create a check box
@@ -309,7 +312,7 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                     selection = bodyInput.selection(0).entity
                     mesh = selection.mesh
                     body = meshHelper.fusionPolygonMeshToBody(mesh)
-                    degreeField.value = calculateAppropriateNoiseLevel(body)
+                    degreeField.valueOne = calculateAppropriateNoiseLevel(body)
                 else:
                     currentPreview = None
                     currentPreviewMesh = None
@@ -367,7 +370,7 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
                 seed = (inputs.itemById('seedField').value).strip()
                 if seed == '':
                     seed = None
-                degree = inputs.itemById('degree').value
+                degree = inputs.itemById('degree').valueOne
                 dimension3 = inputs.itemById('dim3Buttons').selectedItem.name
                 dimension2 = inputs.itemById('dim2Buttons').selectedItem.name
                 signed = inputs.itemById('signedBox').value
@@ -482,7 +485,7 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
             seed = (inputs.itemById('seedField').value).strip()
             if seed == '':
                 seed = None
-            degree = inputs.itemById('degree').value
+            degree = inputs.itemById('degree').valueOne
             dimension3 = inputs.itemById('dim3Buttons').selectedItem.name
             dimension2 = inputs.itemById('dim2Buttons').selectedItem.name
             signed = inputs.itemById('signedBox').value
@@ -503,8 +506,6 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
             elif planeInput.selectedItem.name == "yZ":
                 planeString = 'yZ'
 
-            #test line 
-            
             selectionList = []
             for i in range(inputs.itemById('body_input').selectionCount):
                 selectionList.append(inputs.itemById('body_input').selection(i).entity)
@@ -541,7 +542,8 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
                     body = currentPreview
 
                 selection.isLightBulbOn = False    
-                meshBodies.addByTriangleMeshData([x for y in body.vertices for x in y],mesh.triangleNodeIndices,[],[])
+                meshBody = meshBodies.addByTriangleMeshData([x for y in body.vertices for x in y],mesh.triangleNodeIndices,[],[])
+                #meshBody.name = 
                 # Add the operation to the timeline
                 #addToTimeline()
         except ValueError as err:

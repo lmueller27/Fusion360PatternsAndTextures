@@ -76,6 +76,8 @@ def grungeMapNoise(body:Body, map:GrungeMap, amplitude, inverse, smooth, plane,p
             normal.scaleBy(noise*amplitude)
         else:
             normal.scaleBy(-noise*amplitude)
+            ## Just a workaround to level the result
+            normal.add(Vector3D.create(0,0,amplitude))
         vec.add(normal)
         ###
         body.vertices[i] = vec.asArray()
