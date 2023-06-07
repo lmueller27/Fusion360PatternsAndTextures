@@ -101,7 +101,7 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
 
 #frequency>1 -> compress the curve, frequency<1 -> stretch the curve
 # We don't allow frequencies > 1, as our curve is not periodic. 
-def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
+def valueNoise2D(body:Body, resolutionX:int, resolutionY:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
     if seed:
         random.seed(seed)
     xValues = [v[0] for v in body.vertices]
@@ -110,9 +110,9 @@ def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
 
     #make a lattice grid
     lattice = []
-    for i in range(resolution):
+    for i in range(resolutionX):
         lattice.append([])
-        for j in range(resolution):
+        for j in range(resolutionY):
             if signed:
                 lattice[i].append(random.uniform(-1,1))
             else:
@@ -120,7 +120,7 @@ def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     
     def getNoiseValue(x,y):
         xMin = min(int(x),len(lattice)-1)
-        yMin = min(int(y),len(lattice)-1)
+        yMin = min(int(y),len(lattice[0])-1)
         tx = x - xMin
         ty = y - yMin
         if smooth:
@@ -130,7 +130,7 @@ def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
         rx0 = xMin
         rx1 = min(xMin+1,len(lattice)-1)
         ry0 = yMin
-        ry1 = min(yMin+1,len(lattice)-1)
+        ry1 = min(yMin+1,len(lattice[0])-1)
 
         c00 = lattice[rx0][ry0]
         c10 = lattice[rx1][ry0]
@@ -146,8 +146,8 @@ def valueNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     minY = min(yValues)
     maxY = max(yValues)
 
-    xValuesScaled = [(x- minX)/(maxX-minX) * (resolution-1) for x in xValues]
-    yValuesScaled = [(y- minY)/(maxY-minY) * (resolution-1) for y in yValues]
+    xValuesScaled = [(x- minX)/(maxX-minX) * (resolutionX-1) for x in xValues]
+    yValuesScaled = [(y- minY)/(maxY-minY) * (resolutionY-1) for y in yValues]
     xyValuesScaled = list(zip(xValuesScaled,yValuesScaled))
 
     allSteps = len(body.vertices)

@@ -50,8 +50,15 @@ def readPng(filename):
             flatValuesScaled = [(x-minValue)/(maxValue-minValue) for x in list(map(lambda x: 0.299*x[0]+0.587*x[1]+0.114*x[2], zip(r,g,b)))]
 
     values = []
-    for i in range(sizeX):
+    #for i in range(sizeX):
+    #    values.append([])
+    #    for j in range(sizeY):
+    #        values[i].append(flatValuesScaled[i*sizeX + j])
+    
+    for j in range(sizeY):
         values.append([])
-        for j in range(sizeY):
-            values[i].append(flatValuesScaled[i*sizeX + j])
+    for j in range(sizeY-1,-1,-1):
+        for i in range(sizeX-1,-1,-1):
+            values[j].append(flatValuesScaled[i*sizeX + j])
+    
     return GrungeMap(sizeX,sizeY,values)
