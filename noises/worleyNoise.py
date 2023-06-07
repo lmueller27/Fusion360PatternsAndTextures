@@ -7,9 +7,6 @@ import adsk.core
 
 def worleyNoise3D(body:Body, resolution:int, amplitude:float, step:bool, stepPadding:float, seed:int=None, progressDialog:ProgressDialog=None) -> Body: 
     start = time.time()
-
-    #ToDo: Think and Ask about the delay number in seconds. 
-    #progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices))
         
     if seed:
         random.seed(seed)

@@ -1,5 +1,5 @@
-#Author-
-#Description-
+#Author- Leon Müller
+#Description- A Fusion360 Add-In that lets you add noise, patterns, and textures to your MeshBodies.
 
 from tokenize import Double
 import adsk.core, adsk.fusion, adsk.cam, traceback, os, sys, random, time
@@ -27,8 +27,8 @@ lastAdvancedGroupValue = False
 
 previewIsActive = False
 currentGrungeMap: GrungeMap = None
-currentPreview: Body = None
-currentPreviewMesh = None
+currentPreview = []
+currentPreviewMesh = []
 
 
 
@@ -41,11 +41,12 @@ def run(context):
         #global progressDialog
         #progressDialog = ui.createProgressDialog()
         #pngHelper.readPng()
+
         # Get the CommandDefinitions collection.
         cmdDefs = ui.commandDefinitions
         # Create a button command definition.
         buttonSample = cmdDefs.addButtonDefinition('NoiseButton', 
-                                                   'Noisy Surfaces', 
+                                                   'Patterns and Textures', 
                                                    'Lets you add noise to your MeshBodies.\n Provides a selection of noise algorithms and paramaterized settings.',
                                                    './resources/newButton')
         buttonSample.toolClipFilename = 'resources/button/toolClip.png'
@@ -68,7 +69,7 @@ def run(context):
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-# Event handler for the commandCreated event.
+# Event handler for the commandCreated event. (The Add-In view is opened)
 class SampleCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
     def __init__(self):
         super().__init__()
@@ -83,8 +84,8 @@ class SampleCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
         
         global previewIsActive, currentPreview, currentPreviewMesh, lastStepGroupValue, lastAdvancedGroupValue
         previewIsActive = False
-        currentPreview = None
-        currentPreviewMesh = None
+        currentPreview = []
+        currentPreviewMesh = []
         lastAdvancedGroupValue = False
         lastStepGroupValue = False
 
@@ -143,6 +144,9 @@ class SampleCommandCreatedEventHandler(adsk.core.CommandCreatedEventHandler):
         resolutionField = inputs.addIntegerSpinnerCommandInput('resolutionField', 'Resolution', 2, 1000, 1, 10)
         resolutionField.tooltip = "Sets the resolution of the applied noise function. \nThe higher the resolution, the more features are visible."
         #resolutionField.isVisible = False
+
+        resolutionYField = inputs.addIntegerSpinnerCommandInput('resolutionYField', 'ResolutionY', 2, 1000, 1, 10)
+        resolutionYField.tooltip = "Sets the y-resolution of the applied noise function. \nThe higher the resolution, the more features are visible."
 
         # Plane input for 2D noise
         #planeInput = inputs.addSelectionInput('planeInput', 'Plane', 'Select Plane to apply noise to.')
@@ -228,8 +232,8 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
             lastChangedInput = changedInput.id
             if changedInput.id == 'previewBox':
                 previewIsActive = not previewIsActive
-                currentPreview = None
-                currentPreviewMesh = None
+                currentPreview = []
+                currentPreviewMesh = []
             elif changedInput.id == 'dropList':
                 for i in inputs:
                     if not i.id in defaultCommandInputs and not i.id in groupCommandChildren:
@@ -244,6 +248,7 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                 stepGroup = inputs.itemById('stepGroup')
                 advancedGroup = inputs.itemById('advancedGroup')
                 resolutionField = inputs.itemById('resolutionField')
+                resolutionYField = inputs.itemById('resolutionYField')
                 frequencyField = inputs.itemById('frequencyField')
                 imageField = inputs.itemById('imageField')
                 fileDialogButton = inputs.itemById('fileDialogButton')
@@ -253,8 +258,8 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                 previewBox = inputs.itemById('previewBox')
                 previewBox.value =False
                 previewIsActive = False
-                currentPreview = None
-                currentPreviewMesh = None
+                currentPreview = []
+                currentPreviewMesh = []
 
                 # Change the visibility of the scale value input.
                 if changedInput.selectedItem.name == 'Adaptive Noise':
@@ -265,6 +270,7 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                     signedBox.isVisible = True
                     smoothBox.isVisible = True
                     resolutionField.isVisible = True
+                    resolutionYField.isVisible = True
                     #frequencyField.isVisible = True
                     algDescriptionBox.text = "Generates noise based on a continous function. The dimension of the function can be specified as well as the resolution."
                 elif changedInput.selectedItem.name == 'Perlin Noise':
@@ -314,8 +320,8 @@ class SampleCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                     body = meshHelper.fusionPolygonMeshToBody(mesh)
                     degreeField.valueOne = calculateAppropriateNoiseLevel(body)
                 else:
-                    currentPreview = None
-                    currentPreviewMesh = None
+                    currentPreview = []
+                    currentPreviewMesh = []
 
 
             app.activeViewport.refresh()  
@@ -334,6 +340,9 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
         ui  = app.userInterface
         
         try:
+            progressDialog = ui.createProgressDialog()
+            progressDialog.hide()
+            
             eventArgs = adsk.core.CommandEventArgs.cast(args)
             inputs = eventArgs.command.commandInputs
             stepActive = inputs.itemById('stepGroup').isEnabledCheckBoxChecked
@@ -349,9 +358,9 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
                 for selection in selectionList:
                     selection.isLightBulbOn = False
                     mesh = selection.mesh
-                #showMeshPreview(currentPreview,mesh)
-                if not currentPreview == None:
-                    showMeshPreview(currentPreview,currentPreviewMesh)
+                if len(currentPreview) > 0:
+                    for body, mesh in zip(currentPreview, currentPreviewMesh):
+                        showMeshPreview(body,mesh)
             elif previewIsActive and (not lastChangedInput == 'advancedGroup') and (not lastChangedInput == 'dropList'):
                 if not stepActive == lastStepGroupValue:
                     lastStepGroupValue = stepActive
@@ -361,35 +370,10 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
                 product = app.activeProduct #the fusion tab that is active
                 rootComp = product.rootComponent # the root component of the active product
                 meshBodies = rootComp.meshBodies
-                #eventArgs = adsk.core.CommandEventArgs.cast(args)
+                algorithm, seed, degree, dimension3, dimension2, signed, smooth, resolution, resolutionY, frequency, inverse, stepActive, stepPadding, planeString = getInputs(inputs)
 
-                # Get the values from the command inputs. 
-                #inputs = eventArgs.command.commandInputs
-
-                algorithm = inputs.itemById('dropList').selectedItem.name
-                seed = (inputs.itemById('seedField').value).strip()
-                if seed == '':
-                    seed = None
-                degree = inputs.itemById('degree').valueOne
-                dimension3 = inputs.itemById('dim3Buttons').selectedItem.name
-                dimension2 = inputs.itemById('dim2Buttons').selectedItem.name
-                signed = inputs.itemById('signedBox').value
-                smooth = inputs.itemById('smoothBox').value
-                stepActive = inputs.itemById('stepGroup').isEnabledCheckBoxChecked
-                stepPadding = inputs.itemById('stepPaddingField').value
-                resolution = inputs.itemById('resolutionField').value
-                frequency = inputs.itemById('frequencyField').value
-                inverse = inputs.itemById('inverseBox').value
-
-                #Get the construction plane and turn it into a string
-                planeInput = inputs.itemById('planeInput')
-                planeString = None
-                if planeInput.selectedItem.name == "xY":
-                    planeString = 'xY'
-                elif planeInput.selectedItem.name == "xZ":
-                    planeString = 'xZ'
-                elif planeInput.selectedItem.name == "yZ":
-                    planeString = 'yZ'
+                currentPreview = []
+                currentPreviewMesh = []
 
                 selectionList = []
                 for i in range(inputs.itemById('body_input').selectionCount):
@@ -398,60 +382,17 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
                     mesh = selection.mesh
                     body = meshHelper.fusionPolygonMeshToBody(mesh)
 
-                    #progressDialog.reset()
-                    #progressDialog = ui.createProgressDialog()
-                    progressDialog = ui.createProgressDialog()
-                    progressDialog.hide()
-
-                    if algorithm == 'Adaptive Noise':   
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.facets),2)
-                        adaptiveVertexDistortion(body, degree, inverse, seed, progressDialog)
-                        progressDialog.hide()
-                    elif algorithm == 'Random Noise': 
-                        randomDistortion(body, degree, seed)
-                    elif algorithm == 'Value Noise': 
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
-                        if dimension3 == '1D':
-                            valueNoise1D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                        elif dimension3 == '2D':
-                            valueNoise2D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                        elif dimension3 == '3D':
-                            valueNoise3D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                        progressDialog.hide()
-                    elif algorithm == 'Perlin Noise': 
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
-                        if dimension2 == '2D':
-                            perlinNoise2D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                        elif dimension2 == '3D':
-                            perlinNoise3D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                        progressDialog.hide()
-                    elif algorithm == 'Worley Noise': 
-                        #progressDialog = ui.createProgressDialog()
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
-                        if dimension2 == '2D':
-                            worleyNoise2D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
-                        elif dimension2 == '3D':
-                            worleyNoise3D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
-                        progressDialog.hide()
-                    elif algorithm == 'Grunge Map': 
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
-                        grungeMapNoise(body,currentGrungeMap, degree, inverse,smooth,planeString,progressDialog)
-                        progressDialog.hide()
+                    computeNoise(progressDialog, algorithm, seed, degree, dimension3, dimension2, signed, smooth, resolution, resolutionY, frequency, inverse, stepActive, stepPadding, planeString, body)
 
                     selection.isLightBulbOn = False
-                    #progressDialog.reset()
-                    progressDialog.hide()
-
-                    currentPreview = body
-                    currentPreviewMesh = mesh
-                    
+                    currentPreview.append(body)
+                    currentPreviewMesh.append(mesh)
                     showMeshPreview(body,mesh)
-
-                    app.activeViewport.refresh()  
+                    #app.activeViewport.refresh()  
         except ValueError as err:
             if 'CanceledProgress'in err.args:
-                currentPreview = None
-                currentPreviewMesh = None
+                currentPreview = []
+                currentPreviewMesh = []
                 progressDialog.hide()
             else:
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
@@ -465,11 +406,12 @@ class SampleCommandExecutePreviewHandler(adsk.core.CommandEventHandler):
 class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
     def __init__(self):
         super().__init__()
-    def notify(self, args):
-        try:
-            app = adsk.core.Application.get()
-            ui  = app.userInterface
 
+    def notify(self, args):
+        app = adsk.core.Application.get()
+        ui  = app.userInterface
+        
+        try:
             progressDialog = ui.createProgressDialog()
             progressDialog.hide()
             
@@ -477,75 +419,26 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
             rootComp = product.rootComponent # the root component of the active product
             meshBodies = rootComp.meshBodies
             eventArgs = adsk.core.CommandEventArgs.cast(args)
-
             # Get the values from the command inputs. 
             inputs = eventArgs.command.commandInputs
-
-            algorithm = inputs.itemById('dropList').selectedItem.name
-            seed = (inputs.itemById('seedField').value).strip()
-            if seed == '':
-                seed = None
-            degree = inputs.itemById('degree').valueOne
-            dimension3 = inputs.itemById('dim3Buttons').selectedItem.name
-            dimension2 = inputs.itemById('dim2Buttons').selectedItem.name
-            signed = inputs.itemById('signedBox').value
-            smooth = inputs.itemById('smoothBox').value
-            resolution = inputs.itemById('resolutionField').value
-            frequency = inputs.itemById('frequencyField').value
-            inverse = inputs.itemById('inverseBox').value
-            stepActive = inputs.itemById('stepGroup').isEnabledCheckBoxChecked
-            stepPadding = inputs.itemById('stepPaddingField').value
-
-            #Get the construction plane and turn it into a string
-            planeInput = inputs.itemById('planeInput')
-            planeString = None
-            if planeInput.selectedItem.name == "xY":
-                planeString = 'xY'
-            elif planeInput.selectedItem.name == "xZ":
-                planeString = 'xZ'
-            elif planeInput.selectedItem.name == "yZ":
-                planeString = 'yZ'
+            algorithm, seed, degree, dimension3, dimension2, signed, smooth, resolution, resolutionY, frequency, inverse, stepActive, stepPadding, planeString = getInputs(inputs)
 
             selectionList = []
             for i in range(inputs.itemById('body_input').selectionCount):
                 selectionList.append(inputs.itemById('body_input').selection(i).entity)
-            for selection in selectionList:
+            for i, selection in enumerate(selectionList):
                 mesh = selection.mesh
-                if currentPreview==None:
-                    body = meshHelper.fusionPolygonMeshToBody(mesh)
-                    progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
-                    if algorithm == 'Adaptive Noise':   
-                        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.facets),2)
-                        adaptiveVertexDistortion(body, degree, inverse, seed, progressDialog)
-                    elif algorithm == 'Random Noise': 
-                        randomDistortion(body, degree, seed)
-                    elif algorithm == 'Value Noise': 
-                        if dimension3 == '1D':
-                            valueNoise1D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
-                        elif dimension3 == '2D':
-                            valueNoise2D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
-                        elif dimension3 == '3D':
-                            valueNoise3D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
-                    elif algorithm == 'Perlin Noise': 
-                        if dimension2 == '2D':
-                            perlinNoise2D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
-                        elif dimension2 == '3D':
-                            perlinNoise3D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
-                    elif algorithm == 'Worley Noise': 
-                        if dimension2 == '2D':
-                            worleyNoise2D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
-                        elif dimension2 == '3D':
-                            worleyNoise3D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
-                    elif algorithm == 'Grunge Map': 
-                        grungeMapNoise(body,currentGrungeMap,degree,inverse,smooth, planeString, progressDialog)
-                else:
-                    body = currentPreview
+                body = meshHelper.fusionPolygonMeshToBody(mesh)
 
+                if len(currentPreview) > 0:
+                    body = currentPreview[i]
+                else:
+                    computeNoise(progressDialog, algorithm, seed, degree, dimension3, dimension2, signed, smooth, resolution, resolutionY, frequency, inverse, stepActive, stepPadding, planeString, body)
+
+                # Hide the original meshBody, add and name the new one
                 selection.isLightBulbOn = False    
                 meshBody = meshBodies.addByTriangleMeshData([x for y in body.vertices for x in y],mesh.triangleNodeIndices,[],[])
-                #meshBody.name = 
-                # Add the operation to the timeline
-                #addToTimeline()
+                meshBody.name = selection.name + "-" + algorithm 
         except ValueError as err:
             if 'CanceledProgress'in err.args:
                 pass
@@ -553,6 +446,61 @@ class SampleCommandExecuteHandler(adsk.core.CommandEventHandler):
                 ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
         except:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+def getInputs(inputs):
+    algorithm = inputs.itemById('dropList').selectedItem.name
+    seed = (inputs.itemById('seedField').value).strip()
+    if seed == '':
+        seed = None
+    degree = inputs.itemById('degree').valueOne
+    dimension3 = inputs.itemById('dim3Buttons').selectedItem.name
+    dimension2 = inputs.itemById('dim2Buttons').selectedItem.name
+    signed = inputs.itemById('signedBox').value
+    smooth = inputs.itemById('smoothBox').value
+    resolution = inputs.itemById('resolutionField').value
+    resolutionY = inputs.itemById('resolutionYField').value
+    frequency = inputs.itemById('frequencyField').value
+    inverse = inputs.itemById('inverseBox').value
+    stepActive = inputs.itemById('stepGroup').isEnabledCheckBoxChecked
+    stepPadding = inputs.itemById('stepPaddingField').value
+
+        #Get the construction plane and turn it into a string
+    planeInput = inputs.itemById('planeInput')
+    planeString = None
+    if planeInput.selectedItem.name == "xY":
+        planeString = 'xY'
+    elif planeInput.selectedItem.name == "xZ":
+        planeString = 'xZ'
+    elif planeInput.selectedItem.name == "yZ":
+        planeString = 'yZ'
+    return algorithm,seed,degree,dimension3,dimension2,signed,smooth,resolution,resolutionY,frequency,inverse,stepActive,stepPadding,planeString
+
+def computeNoise(progressDialog, algorithm, seed, degree, dimension3, dimension2, signed, smooth, resolution, resolutionY, frequency, inverse, stepActive, stepPadding, planeString, body):
+    progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.vertices),2)
+    if algorithm == 'Adaptive Noise':   
+        progressDialog.show('Computing Noise...', 'Percentage: %p% - %v/%m steps completed',0,len(body.facets),2)
+        adaptiveVertexDistortion(body, degree, inverse, seed, progressDialog)
+    elif algorithm == 'Random Noise': 
+        randomDistortion(body, degree, seed)
+    elif algorithm == 'Value Noise': 
+        if dimension3 == '1D':
+            valueNoise1D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
+        elif dimension3 == '2D':
+            valueNoise2D(body,resolution,resolutionY,degree,frequency,signed,smooth,seed, progressDialog)
+        elif dimension3 == '3D':
+            valueNoise3D(body,resolution,degree,frequency,signed,smooth,seed, progressDialog)
+    elif algorithm == 'Perlin Noise': 
+        if dimension2 == '2D':
+            perlinNoise2D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
+        elif dimension2 == '3D':
+            perlinNoise3D(body,resolution,degree,frequency,signed,smooth,seed,progressDialog)
+    elif algorithm == 'Worley Noise': 
+        if dimension2 == '2D':
+            worleyNoise2D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
+        elif dimension2 == '3D':
+            worleyNoise3D(body, resolution, degree, stepActive, stepPadding, seed=seed, progressDialog=progressDialog)
+    elif algorithm == 'Grunge Map': 
+        grungeMapNoise(body,currentGrungeMap,degree,inverse,smooth, planeString, progressDialog)
 
 def showMeshPreview(body:Body, mesh:adsk.fusion.MeshBody):
     try: 

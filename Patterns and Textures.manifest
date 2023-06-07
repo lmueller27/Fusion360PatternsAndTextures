@@ -2,11 +2,11 @@
 	"autodeskProduct":	"Fusion360",
 	"type":	"addin",
 	"id":	"8dda2846-42fb-4678-ae6a-8221ae8951bb",
-	"author":	"",
+	"author":	"Leon Müller",
 	"description":	{
 		"":	""
 	},
-	"version":	"",
+	"version":	"0.1",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true
