@@ -76,7 +76,7 @@ def adaptiveVertexDistortion(body, degree:float, inverse=False, seed:int=None, p
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue

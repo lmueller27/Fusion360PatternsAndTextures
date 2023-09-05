@@ -58,7 +58,7 @@ def grungeMapNoise(body:Body, map:GrungeMap, amplitude, inverse, smooth, plane,p
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i == 0:
                 progressDialog.progressValue = i+1

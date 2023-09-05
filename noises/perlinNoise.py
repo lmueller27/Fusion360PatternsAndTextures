@@ -100,7 +100,7 @@ def perlinNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue
@@ -188,7 +188,7 @@ def perlinNoise2D(body:Body, resolution:int, amplitude:float=1, frequency:float=
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue

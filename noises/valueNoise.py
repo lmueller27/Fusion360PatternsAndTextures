@@ -3,7 +3,7 @@ from ..helpers.meshHelper import Body
 from ..helpers.mathHelper import *
 from adsk.core import ProgressDialog, Vector2D, Vector3D
 
-def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
+def valueNoise3D(body:Body, resolutionX:int, resolutionY:int, resolutionZ:int, amplitude:float=1, frequency:float=1, signed:bool=True, smooth:bool=True, seed:int=None, progressDialog:ProgressDialog=None) -> Body:
     if seed:
         random.seed(seed)
     xValues = [v[0] for v in body.vertices]
@@ -11,11 +11,11 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     zValues = [v[2] for v in body.vertices]
     #make a lattice grid
     lattice = []
-    for i in range(resolution): # This is the ugliest matrix init of all time
+    for i in range(resolutionX): # This is the ugliest matrix init of all time
         lattice.append([])
-        for j in range(resolution):
+        for j in range(resolutionY):
             lattice[i].append([])
-            for k in range(resolution):
+            for k in range(resolutionZ):
                 if signed:
                     lattice[i][j].append(random.uniform(-1,1))
                 else:
@@ -23,8 +23,8 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     
     def getNoiseValue(x,y,z):
         xMin = min(int(x),len(lattice)-1)
-        yMin = min(int(y),len(lattice)-1)
-        zMin = min(int(z),len(lattice)-1)
+        yMin = min(int(y),len(lattice[0])-1)
+        zMin = min(int(z),len(lattice[0][0])-1)
         tx = x - xMin
         ty = y - yMin
         tz = z - zMin
@@ -36,9 +36,9 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
         rx0 = xMin
         rx1 = min(xMin+1,len(lattice)-1)
         ry0 = yMin
-        ry1 = min(yMin+1,len(lattice)-1)
+        ry1 = min(yMin+1,len(lattice[0])-1)
         rz0 = zMin
-        rz1 = min(zMin+1,len(lattice)-1)
+        rz1 = min(zMin+1,len(lattice[0][0])-1)
 
         c000 = lattice[rx0][ry0][rz0]
         c100 = lattice[rx1][ry0][rz0]
@@ -66,10 +66,10 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
     minZ = min(zValues)
     maxZ = max(zValues)
 
-    xValuesScaled = [(x- minX)/(maxX-minX) * (resolution-1) for x in xValues]
-    yValuesScaled = [(y- minY)/(maxY-minY) * (resolution-1) for y in yValues]
+    xValuesScaled = [(x- minX)/(maxX-minX) * (resolutionX-1) for x in xValues]
+    yValuesScaled = [(y- minY)/(maxY-minY) * (resolutionY-1) for y in yValues]
     if not maxZ == minZ:
-        zValuesScaled = [(z- minZ)/(maxZ-minZ) * (resolution-1) for z in zValues]
+        zValuesScaled = [(z- minZ)/(maxZ-minZ) * (resolutionZ-1) for z in zValues]
     else:
         zValuesScaled = zValues
     xyzValuesScaled = list(zip(xValuesScaled,yValuesScaled,zValuesScaled))
@@ -81,7 +81,7 @@ def valueNoise3D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue
@@ -106,7 +106,7 @@ def valueNoise2D(body:Body, resolutionX:int, resolutionY:int, amplitude:float=1,
         random.seed(seed)
     xValues = [v[0] for v in body.vertices]
     yValues = [v[1] for v in body.vertices]
-    zValues = [v[2] for v in body.vertices]
+    #zValues = [v[2] for v in body.vertices]
 
     #make a lattice grid
     lattice = []
@@ -157,7 +157,7 @@ def valueNoise2D(body:Body, resolutionX:int, resolutionY:int, amplitude:float=1,
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue
@@ -214,7 +214,7 @@ def valueNoise1D(body:Body, resolution:int, amplitude:float=1, frequency:float=1
         if progressDialog:
             if progressDialog.wasCancelled:
                 raise ValueError('CanceledProgress')
-            if i%int(allSteps/20)==0:
+            if i%(int(allSteps/20)+1)==0:
                 progressDialog.progressValue = i+1
             elif i > maxSteps:
                 progressDialog.progressValue = progressDialog.maximumValue
