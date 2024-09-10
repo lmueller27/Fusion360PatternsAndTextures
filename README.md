@@ -11,6 +11,9 @@ Download the zip folder of this project by clicking the green "<> Code" button a
 
 Follow the instructions for manually installing an Add-In: https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-install-an-ADD-IN-and-Script-in-Fusion-360.html
 
+### IMPORTANT: 
+A detail in the instruction -- which can be easily overlooked -- is that the folder has to have the exact same name as the main script of the Plugin. Rename the directory from "Fusion360PatternsAndTextures" (or whatever it is called on your machine) to "Noise, Patterns and Textures".
+
 Afterward, the Scripts and Add-Ins submenu now displays the Add-In, which can be executed.
 The Add-In button to can be found in the mesh tab under the "MODIFY" tool category.
 
